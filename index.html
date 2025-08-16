@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Walkie‑Talkie — Final Fixed</title>
+  <style>
+    :root{
+      --shell:#d6a500; --shell-hi:#f1c40f; --screen:#0b0e19; --glass:#0f1220;
+      --text:#e9ecf3; --muted:#9aa4b6; --ok:#49c56b; --err:#ff8b8b; --ptt:#e24646; --ptt-d:#b02f2f;
+    }
+    html,body{height:100%;margin:0;background:#0f1220;color:var(--text);font-family:system-ui,Segoe UI,Arial,sans-serif}
+    .stage{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+    .device{position:relative;width:min(380px,94vw);aspect-ratio:9/16;background:linear-gradient(160deg,var(--shell-hi),var(--shell));border-radius:28px;
+      box-shadow:inset 0 2px 0 rgba(255,255,255,.10), inset 0 -10px 22px rgba(0,0,0,.20), 0 20px 80px rgba(0,0,0,.55);
+      border:1px solid #997a00; display:grid; grid-template-rows:74px 1fr 130px; overflow:hidden}
+    .head{padding:14px 18px 4px}
+    .grill{height:42px;border-radius:10px;background:linear-gradient(180deg,#151a29,#0c0f18);border:1px solid #2a2f3f;box-shadow:inset 0 -8px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,.04);display:grid;align-content:center;padding:0 14px;gap:4px}
+    .engrave{position:absolute;left:0;right:0;top:66px;display:flex;justify-content:center;pointer-events:none}
+    .engrave span{font-weight:800;letter-spacing:2px;font-size:12px;opacity:.85}
+    .screen-wrap{padding:10px 18px}
+    .screen{position:relative;height:100%;background:radial-gradient(120% 100% at 50% 0%,#11162a 0%, #0b0e19 60%, #090b14 100%);border:1px solid #2a3146;border-radius:16px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.04);display:grid;grid-template-rows:28px 1fr 26px}
+    .statusbar{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;font-size:12px;color:#cfe3ff}
+    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #35405b;padding:2px 8px;border-radius:999px;font-size:11px}
+    .lcd{padding:12px;display:grid;gap:10px;align-content:start;overflow:auto;color:#dbe6ff;text-shadow:0 0 12px rgba(100,150,255,.12);font-size:14px}
+    .lcd .hint{color:var(--muted);font-size:12px}
+    .lcd input,.lcd button{border-radius:10px;border:1px solid #35405b;background:#0b0e19;color:var(--text);padding:10px 12px;font-size:13px;outline:none}
+    .lcd input{flex:1;min-width:0}
+    .lcd .row{display:flex;gap:8px}
+    .lcd .softkeys{display:flex;gap:8px}
+    #status{color:#9bd;font-size:12px}
+    #errors{color:var(--err);font-size:12px}
+    #partyCount{color:#cfe3ff;font-size:12px}
+    #partyList{color:#cbd9ff;font-size:12px}
+    .keys{padding:14px 18px 18px;display:grid;align-items:center}
+    #pttBtn{margin:auto;height:96px;width:96px;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--ptt),var(--ptt-d));
+      border:3px solid #6f1e1e;box-shadow:inset 0 4px 8px rgba(255,255,255,.08), inset 0 -8px 12px rgba(0,0,0,.45), 0 10px 22px rgba(0,0,0,.55);
+      font-weight:800;letter-spacing:.6px;font-size:16px;color:#fff;cursor:pointer;transition:transform .08s ease, box-shadow .08s ease}
+    #pttBtn:active{transform:translateY(2px);box-shadow:inset 0 2px 6px rgba(255,255,255,.08), inset 0 -4px 8px rgba(0,0,0,.55), 0 4px 10px rgba(0,0,0,.5)}
+    #pttBtn.talking{background:radial-gradient(circle at 30% 30%,#4fc96f,#2b9e49);box-shadow:inset 0 4px 8px rgba(255,255,255,.08), inset 0 -8px 12px rgba(0,0,0,.45), 0 10px 22px rgba(73,197,107,.25)}
+    #pttBtn:disabled{opacity:.65;cursor:not-allowed}
+    .ptt-label{margin-top:8px;text-align:center;font-size:11px;color:#2a2a2a;opacity:.85}
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="device">
+      <div class="head">
+        <div class="grill"></div>
+        <div class="engrave"><span>WALKIE‑TALKIE • FINAL</span></div>
+      </div>
+
+      <div class="screen-wrap">
+        <div class="screen">
+          <div class="statusbar">
+            <span class="pill" id="originPill">—</span>
+            <span class="pill" id="micPill">Mic: —</span>
+            <span class="pill" id="authPill">Auth: —</span>
+          </div>
+
+          <div class="lcd">
+            <div class="row">
+              <input id="displayName" placeholder="Your name (optional)" />
+              <button id="signInBtn">Sign in (Anon)</button>
+            </div>
+
+            <div class="softkeys">
+              <button id="createBtn" disabled>Create Room</button>
+              <input id="roomIdInput" placeholder="Room ID" />
+              <button id="joinBtn" disabled>Join</button>
+            </div>
+
+            <div class="softkeys">
+              <input id="inviteUid" placeholder="Invite user UID" />
+              <button id="inviteBtn" disabled>Invite</button>
+              <button id="leaveBtn" disabled>Leave</button>
+            </div>
+
+            <div id="status">Status: Not connected.</div>
+
+            <div id="partyWrap">
+              <div id="partyCount">In room: 0</div>
+              <div id="partyList">—</div>
+            </div>
+
+            <div id="inboxWrap">
+              <div class="hint">Invites to you (click to accept):</div>
+              <div id="inbox">—</div>
+            </div>
+
+            <div id="errors"></div>
+          </div>
+
+          <div class="statusbar" style="justify-content:center;color:#9aa4b6"><span>◀ MENU ▪️ SELECT ▪️ BACK ▶</span></div>
+        </div>
+      </div>
+
+      <div class="keys">
+        <button id="pttBtn" disabled oncontextmenu="return false;">TALK</button>
+        <div class="ptt-label">Hold to talk (Spacebar)</div>
+        <audio id="remoteAudio" autoplay playsinline style="display:none"></audio>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase compat SDKs (keep compat style to match code) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+  <!-- Load your config BEFORE app.js -->
+  <script src="./firebase-config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
